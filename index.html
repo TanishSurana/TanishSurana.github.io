@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title></title>
   <style>
-    /* Apple-style typography and colors */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -19,11 +18,6 @@
     header {
       padding: 2rem;
       text-align: center;
-    }
-    h1 {
-      font-size: 2.5rem;
-      margin: 0;
-      font-weight: 600;
     }
     nav {
       margin-top: 1rem;
@@ -47,7 +41,6 @@
       max-width: 800px;
       margin: 2rem auto;
       background: transparent;
-      border-radius: 0;
       box-shadow: none;
       overflow: hidden;
     }
@@ -94,7 +87,6 @@
 </head>
 <body>
   <header>
-    <h1></h1>
     <nav>
       <button class="btn" data-type="text">Quotes</button>
       <button class="btn" data-type="image">Images</button>
@@ -105,18 +97,16 @@
   <div class="slideshow-container"></div>
 
   <script>
-    // Your own media items
+    // 1) Define your static media lists (just filenames, relative to these folders)
     const mediaItems = {
-      text: [
-        "I trust chatgpt with every fiber of my being."
-      ],
+      text: [],                 // loaded from quotes/quotes.json
       image: [
-        "https://via.placeholder.com/800x400.png?text=Image+1",
-        "https://via.placeholder.com/800x400.png?text=Image+2"
+        "images/photo1.jpg",
+        "images/photo2.jpg"
       ],
       gif: [
-        "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif",
-        "https://media.giphy.com/media/l0HlQ7LRal9GBo5DW/giphy.gif"
+        "gifs/anim1.gif",
+        "gifs/anim2.gif"
       ],
       video: [
         "https://www.w3schools.com/html/mov_bbb.mp4",
@@ -126,10 +116,10 @@
 
     let currentType = "text";
     let currentIndex = 0;
-
     const container = document.querySelector(".slideshow-container");
     const buttons = document.querySelectorAll(".btn");
 
+    // 2) Wire up the buttons
     buttons.forEach(btn => {
       btn.addEventListener("click", () => {
         currentType = btn.dataset.type;
@@ -138,59 +128,74 @@
       });
     });
 
+    // 3) Fetch your quotes JSON on load, then render the first slide
+    document.addEventListener("DOMContentLoaded", () => {
+      fetch("quotes/quotes.json")
+        .then(res => res.json())
+        .then(data => {
+          mediaItems.text = data;
+          renderSlides();
+        })
+        .catch(err => {
+          console.error("Could not load quotes:", err);
+          mediaItems.text = ["I trust chatgpt with every fiber of my being."];
+          renderSlides();
+        });
+    });
+
+    // 4) Build the slides + controls
     function renderSlides() {
       container.innerHTML = "";
-      const items = mediaItems[currentType];
+      const items = mediaItems[currentType] || [];
 
-      items.forEach((item, index) => {
+      items.forEach((item, idx) => {
         const slide = document.createElement("div");
-        slide.classList.add("slide");
-        if (index === 0) slide.classList.add("active");
+        slide.className = "slide" + (idx === currentIndex ? " active" : "");
 
         if (currentType === "text") {
-          const blockquote = document.createElement("blockquote");
-          blockquote.textContent = item;
-          slide.appendChild(blockquote);
+          const bq = document.createElement("blockquote");
+          bq.textContent = item;
+          slide.appendChild(bq);
+
         } else if (currentType === "video") {
-          const video = document.createElement("video");
-          video.src = item;
-          video.controls = true;
-          video.classList.add("media");
-          slide.appendChild(video);
+          const vid = document.createElement("video");
+          vid.src = item;
+          vid.controls = true;
+          vid.className = "media";
+          slide.appendChild(vid);
+
         } else {
           const img = document.createElement("img");
           img.src = item;
-          img.classList.add("media");
+          img.className = "media";
           slide.appendChild(img);
         }
 
         container.appendChild(slide);
       });
 
-      const controls = document.createElement("div");
-      controls.classList.add("controls");
+      // controls
+      const ctrl = document.createElement("div");
+      ctrl.className = "controls";
       const prev = document.createElement("button");
       prev.innerHTML = "&#10094;";
-      prev.classList.add("control-btn");
-      prev.addEventListener("click", () => changeSlide(-1));
+      prev.className = "control-btn";
+      prev.onclick = () => changeSlide(-1);
       const next = document.createElement("button");
       next.innerHTML = "&#10095;";
-      next.classList.add("control-btn");
-      next.addEventListener("click", () => changeSlide(1));
-      controls.appendChild(prev);
-      controls.appendChild(next);
-      container.appendChild(controls);
+      next.className = "control-btn";
+      next.onclick = () => changeSlide(1);
+      ctrl.append(prev, next);
+      container.appendChild(ctrl);
     }
 
-    function changeSlide(direction) {
-      const slides = document.querySelectorAll(".slide");
+    function changeSlide(dir) {
+      const slides = container.querySelectorAll(".slide");
+      if (!slides.length) return;
       slides[currentIndex].classList.remove("active");
-      currentIndex = (currentIndex + direction + slides.length) % slides.length;
+      currentIndex = (currentIndex + dir + slides.length) % slides.length;
       slides[currentIndex].classList.add("active");
     }
-
-    // Initial render
-    renderSlides();
   </script>
 </body>
 </html>
