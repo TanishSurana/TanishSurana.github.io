@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Favorite Media</title>
+  <style>
+    /* Apple-style typography and colors */
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    header {
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin: 0;
+      font-weight: 600;
+    }
+    nav {
+      margin-top: 1rem;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      margin: 0 0.5rem;
+      background: rgba(255,255,255,0.8);
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: rgba(255,255,255,1);
+    }
+    .slideshow-container {
+      position: relative;
+      width: 80%;
+      max-width: 800px;
+      margin: 2rem auto;
+      background: #fff;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .slide {
+      display: none;
+      padding: 2rem;
+      text-align: center;
+    }
+    .slide.active {
+      display: block;
+    }
+    .controls {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      transform: translateY(-50%);
+    }
+    .control-btn {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
+      padding: 0 1rem;
+      transition: color 0.3s;
+    }
+    .control-btn:hover {
+      color: rgba(0,0,0,0.8);
+    }
+    .media {
+      max-width: 100%;
+      max-height: 60vh;
+      border-radius: 0.5rem;
+    }
+    blockquote {
+      font-style: italic;
+      font-size: 1.5rem;
+      margin: 0;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Favorite Media</h1>
+    <nav>
+      <button class="btn" data-type="text">Quotes</button>
+      <button class="btn" data-type="image">Images</button>
+      <button class="btn" data-type="gif">GIFs</button>
+      <button class="btn" data-type="video">Videos</button>
+    </nav>
+  </header>
+  <div class="slideshow-container"></div>
+
+  <script>
+    // Replace items below with your own quotes, images, GIF URLs and video URLs
+    const mediaItems = {
+      text: [
+        "The only limit to our realization of tomorrow is our doubts of today. - Franklin D. Roosevelt",
+        "In the middle of difficulty lies opportunity. - Albert Einstein"
+      ],
+      image: [
+        "https://via.placeholder.com/800x400.png?text=Image+1",
+        "https://via.placeholder.com/800x400.png?text=Image+2"
+      ],
+      gif: [
+        "https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif",
+        "https://media.giphy.com/media/l0HlQ7LRal9GBo5DW/giphy.gif"
+      ],
+      video: [
+        "https://www.w3schools.com/html/mov_bbb.mp4",
+        "https://www.w3schools.com/html/movie.mp4"
+      ]
+    };
+
+    let currentType = "text";
+    let currentIndex = 0;
+
+    const container = document.querySelector(".slideshow-container");
+    const buttons = document.querySelectorAll(".btn");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentType = btn.dataset.type;
+        currentIndex = 0;
+        renderSlides();
+      });
+    });
+
+    function renderSlides() {
+      container.innerHTML = "";
+      const items = mediaItems[currentType];
+
+      items.forEach((item, index) => {
+        const slide = document.createElement("div");
+        slide.classList.add("slide");
+        if (index === 0) slide.classList.add("active");
+
+        if (currentType === "text") {
+          const blockquote = document.createElement("blockquote");
+          blockquote.textContent = item;
+          slide.appendChild(blockquote);
+        } else if (currentType === "video") {
+          const video = document.createElement("video");
+          video.src = item;
+          video.controls = true;
+          video.classList.add("media");
+          slide.appendChild(video);
+        } else {
+          const img = document.createElement("img");
+          img.src = item;
+          img.classList.add("media");
+          slide.appendChild(img);
+        }
+
+        container.appendChild(slide);
+      });
+
+      const controls = document.createElement("div");
+      controls.classList.add("controls");
+      const prev = document.createElement("button");
+      prev.innerHTML = "&#10094;";
+      prev.classList.add("control-btn");
+      prev.addEventListener("click", () => changeSlide(-1));
+      const next = document.createElement("button");
+      next.innerHTML = "&#10095;";
+      next.classList.add("control-btn");
+      next.addEventListener("click", () => changeSlide(1));
+      controls.appendChild(prev);
+      controls.appendChild(next);
+      container.appendChild(controls);
+    }
+
+    function changeSlide(direction) {
+      const slides = document.querySelectorAll(".slide");
+      slides[currentIndex].classList.remove("active");
+      currentIndex = (currentIndex + direction + slides.length) % slides.length;
+      slides[currentIndex].classList.add("active");
+    }
+
+    // Initial render
+    renderSlides();
+  </script>
+</body>
+</html>
