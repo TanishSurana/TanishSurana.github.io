@@ -97,105 +97,119 @@
   <div class="slideshow-container"></div>
 
   <script>
-    // 1) Define your static media lists (just filenames, relative to these folders)
-    const mediaItems = {
-      text: [],                 // loaded from quotes/quotes.json
-      image: [
-        "images/photo1.jpg",
-        "images/photo2.jpg"
-      ],
-      gif: [
-        "gifs/anim1.gif",
-        "gifs/anim2.gif"
-      ],
-      video: [
-        "https://www.w3schools.com/html/mov_bbb.mp4",
-        "https://www.w3schools.com/html/movie.mp4"
-      ]
-    };
+    (async function() {
+      const username = window.location.hostname.split('.')[0];
+      const repo = `${username}.github.io`;
+      const folders = { image: 'images', gif: 'gifs', video: 'videos' };
+      const mediaItems = { text: [], image: [], gif: [], video: [] };
+      let currentType = 'text';
+      let currentIndex = 0;
+      const container = document.querySelector('.slideshow-container');
+      const buttons = document.querySelectorAll('.btn');
 
-    let currentType = "text";
-    let currentIndex = 0;
-    const container = document.querySelector(".slideshow-container");
-    const buttons = document.querySelectorAll(".btn");
-
-    // 2) Wire up the buttons
-    buttons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        currentType = btn.dataset.type;
-        currentIndex = 0;
-        renderSlides();
-      });
-    });
-
-    // 3) Fetch your quotes JSON on load, then render the first slide
-    document.addEventListener("DOMContentLoaded", () => {
-      fetch("quotes/quotes.json")
-        .then(res => res.json())
-        .then(data => {
-          mediaItems.text = data;
-          renderSlides();
-        })
-        .catch(err => {
-          console.error("Could not load quotes:", err);
-          mediaItems.text = ["I trust chatgpt with every fiber of my being."];
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentType = btn.dataset.type;
+          currentIndex = 0;
           renderSlides();
         });
-    });
-
-    // 4) Build the slides + controls
-    function renderSlides() {
-      container.innerHTML = "";
-      const items = mediaItems[currentType] || [];
-
-      items.forEach((item, idx) => {
-        const slide = document.createElement("div");
-        slide.className = "slide" + (idx === currentIndex ? " active" : "");
-
-        if (currentType === "text") {
-          const bq = document.createElement("blockquote");
-          bq.textContent = item;
-          slide.appendChild(bq);
-
-        } else if (currentType === "video") {
-          const vid = document.createElement("video");
-          vid.src = item;
-          vid.controls = true;
-          vid.className = "media";
-          slide.appendChild(vid);
-
-        } else {
-          const img = document.createElement("img");
-          img.src = item;
-          img.className = "media";
-          slide.appendChild(img);
-        }
-
-        container.appendChild(slide);
       });
 
-      // controls
-      const ctrl = document.createElement("div");
-      ctrl.className = "controls";
-      const prev = document.createElement("button");
-      prev.innerHTML = "&#10094;";
-      prev.className = "control-btn";
-      prev.onclick = () => changeSlide(-1);
-      const next = document.createElement("button");
-      next.innerHTML = "&#10095;";
-      next.className = "control-btn";
-      next.onclick = () => changeSlide(1);
-      ctrl.append(prev, next);
-      container.appendChild(ctrl);
-    }
+      async function loadFolder(type) {
+        const folder = folders[type];
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/${folder}`;
+        try {
+          const res = await fetch(apiUrl);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return data
+            .filter(item => {
+              const ext = item.name.split('.').pop().toLowerCase();
+              if (type === 'image') return ['jpg','jpeg','png','webp','svg'].includes(ext);
+              if (type === 'gif') return ['gif'].includes(ext);
+              if (type === 'video') return ['mp4','webm','ogg'].includes(ext);
+              return false;
+            })
+            .map(item => item.download_url);
+        } catch (e) {
+          console.error('Error loading ' + type + ':', e);
+          return [];
+        }
+      }
 
-    function changeSlide(dir) {
-      const slides = container.querySelectorAll(".slide");
-      if (!slides.length) return;
-      slides[currentIndex].classList.remove("active");
-      currentIndex = (currentIndex + dir + slides.length) % slides.length;
-      slides[currentIndex].classList.add("active");
-    }
+      function renderSlides() {
+        container.innerHTML = '';
+        const items = mediaItems[currentType] || [];
+
+        items.forEach((item, idx) => {
+          const slide = document.createElement('div');
+          slide.className = 'slide' + (idx === currentIndex ? ' active' : '');
+
+          if (currentType === 'text') {
+            const bq = document.createElement('blockquote');
+            bq.textContent = item;
+            slide.appendChild(bq);
+
+          } else if (currentType === 'video') {
+            const vid = document.createElement('video');
+            vid.src = item;
+            vid.controls = true;
+            vid.className = 'media';
+            slide.appendChild(vid);
+
+          } else {
+            const img = document.createElement('img');
+            img.src = item;
+            img.className = 'media';
+            slide.appendChild(img);
+          }
+
+          container.appendChild(slide);
+        });
+
+        const ctrl = document.createElement('div');
+        ctrl.className = 'controls';
+        const prev = document.createElement('button');
+        prev.innerHTML = '&#10094;';
+        prev.className = 'control-btn';
+        prev.onclick = () => changeSlide(-1);
+        const next = document.createElement('button');
+        next.innerHTML = '&#10095;';
+        next.className = 'control-btn';
+        next.onclick = () => changeSlide(1);
+        ctrl.append(prev, next);
+        container.appendChild(ctrl);
+      }
+
+      function changeSlide(dir) {
+        const slides = container.querySelectorAll('.slide');
+        if (!slides.length) return;
+        slides[currentIndex].classList.remove('active');
+        currentIndex = (currentIndex + dir + slides.length) % slides.length;
+        slides[currentIndex].classList.add('active');
+      }
+
+      // Load quotes.json
+      try {
+        const res = await fetch('quotes/quotes.json');
+        mediaItems.text = await res.json();
+      } catch (e) {
+        console.error('Could not load quotes.json, using default:', e);
+        mediaItems.text = ['I trust chatgpt with every fiber of my being.'];
+      }
+
+      // Load images and gifs dynamically
+      mediaItems.image = await loadFolder('image');
+      mediaItems.gif = await loadFolder('gif');
+      // Try local videos, otherwise fallback
+      const vids = await loadFolder('video');
+      mediaItems.video = vids.length ? vids : [
+        'https://www.w3schools.com/html/mov_bbb.mp4',
+        'https://www.w3schools.com/html/movie.mp4'
+      ];
+
+      renderSlides();
+    })();
   </script>
 </body>
 </html>
