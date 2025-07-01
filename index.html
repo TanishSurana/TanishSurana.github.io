@@ -55,7 +55,8 @@
     .controls {
       position: absolute;
       top: 50%;
-      width: 100%;
+      width: calc(100% + 4rem);
+      margin-left: -2rem;
       display: flex;
       justify-content: space-between;
       transform: translateY(-50%);
@@ -113,7 +114,6 @@
 
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
-          // stop autoplay when changing section
           if (autoplayInterval) toggleAutoplay();
           currentType = btn.dataset.type;
           currentIndex = 0;
@@ -129,7 +129,7 @@
           autoplayInterval = null;
           autoplayBtn.textContent = 'Start Autoplay';
         } else {
-          autoplayInterval = setInterval(() => changeSlide(1), 3000);
+          autoplayInterval = setInterval(() => changeSlide(1), 5000);
           autoplayBtn.textContent = 'Stop Autoplay';
         }
       }
@@ -179,7 +179,6 @@
             slide.appendChild(vid);
 
           } else {
-            // image or gif
             const src = entry.kind ? entry.src : entry;
             const img = document.createElement('img');
             img.src = src;
@@ -212,7 +211,6 @@
         slides[currentIndex].classList.add('active');
       }
 
-      // Load quotes
       try {
         const res = await fetch('quotes/quotes.json');
         mediaItems.text = (await res.json()).map(q => ({ kind: 'text', src: q }));
@@ -221,12 +219,9 @@
         mediaItems.text = [{ kind: 'text', src: 'I trust chatgpt with every fiber of my being.' }];
       }
 
-      // Load images, gifs, videos
       mediaItems.image = (await loadFolder('image')).map(src => ({ kind: 'image', src }));
       mediaItems.gif = (await loadFolder('gif')).map(src => ({ kind: 'gif', src }));
       mediaItems.video = (await loadFolder('video')).map(src => ({ kind: 'video', src }));
-
-      // Combine all
       mediaItems.all = [
         ...mediaItems.text,
         ...mediaItems.image,
@@ -234,7 +229,6 @@
         ...mediaItems.video
       ];
 
-      // Initial render
       renderSlides();
     })();
   </script>
