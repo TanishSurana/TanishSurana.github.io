@@ -88,11 +88,13 @@
 <body>
   <header>
     <nav>
+      <button class="btn" data-type="all">All</button>
       <button class="btn" data-type="text">Quotes</button>
       <button class="btn" data-type="image">Images</button>
       <button class="btn" data-type="gif">GIFs</button>
       <button class="btn" data-type="video">Videos</button>
     </nav>
+    <button id="autoplayBtn" class="btn">Start Autoplay</button>
   </header>
   <div class="slideshow-container"></div>
 
@@ -101,19 +103,36 @@
       const username = window.location.hostname.split('.')[0];
       const repo = `${username}.github.io`;
       const folders = { image: 'images', gif: 'gifs', video: 'videos' };
-      const mediaItems = { text: [], image: [], gif: [], video: [] };
-      let currentType = 'text';
+      const mediaItems = { text: [], image: [], gif: [], video: [], all: [] };
+      let currentType = 'all';
       let currentIndex = 0;
+      let autoplayInterval = null;
       const container = document.querySelector('.slideshow-container');
-      const buttons = document.querySelectorAll('.btn');
+      const buttons = document.querySelectorAll('.btn[data-type]');
+      const autoplayBtn = document.getElementById('autoplayBtn');
 
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
+          // stop autoplay when changing section
+          if (autoplayInterval) toggleAutoplay();
           currentType = btn.dataset.type;
           currentIndex = 0;
           renderSlides();
         });
       });
+
+      autoplayBtn.addEventListener('click', toggleAutoplay);
+
+      function toggleAutoplay() {
+        if (autoplayInterval) {
+          clearInterval(autoplayInterval);
+          autoplayInterval = null;
+          autoplayBtn.textContent = 'Start Autoplay';
+        } else {
+          autoplayInterval = setInterval(() => changeSlide(1), 3000);
+          autoplayBtn.textContent = 'Stop Autoplay';
+        }
+      }
 
       async function loadFolder(type) {
         const folder = folders[type];
@@ -132,7 +151,7 @@
             })
             .map(item => item.download_url);
         } catch (e) {
-          console.error('Error loading ' + type + ':', e);
+          console.error(`Error loading ${type}:`, e);
           return [];
         }
       }
@@ -141,25 +160,29 @@
         container.innerHTML = '';
         const items = mediaItems[currentType] || [];
 
-        items.forEach((item, idx) => {
+        items.forEach((entry, idx) => {
           const slide = document.createElement('div');
           slide.className = 'slide' + (idx === currentIndex ? ' active' : '');
 
-          if (currentType === 'text') {
+          if (entry.kind === 'text' || currentType === 'text') {
+            const text = entry.kind ? entry.src : entry;
             const bq = document.createElement('blockquote');
-            bq.textContent = item;
+            bq.textContent = text;
             slide.appendChild(bq);
 
-          } else if (currentType === 'video') {
+          } else if (entry.kind === 'video' || currentType === 'video') {
+            const src = entry.kind ? entry.src : entry;
             const vid = document.createElement('video');
-            vid.src = item;
+            vid.src = src;
             vid.controls = true;
             vid.className = 'media';
             slide.appendChild(vid);
 
           } else {
+            // image or gif
+            const src = entry.kind ? entry.src : entry;
             const img = document.createElement('img');
-            img.src = item;
+            img.src = src;
             img.className = 'media';
             slide.appendChild(img);
           }
@@ -189,25 +212,29 @@
         slides[currentIndex].classList.add('active');
       }
 
-      // Load quotes.json
+      // Load quotes
       try {
         const res = await fetch('quotes/quotes.json');
-        mediaItems.text = await res.json();
+        mediaItems.text = (await res.json()).map(q => ({ kind: 'text', src: q }));
       } catch (e) {
-        console.error('Could not load quotes.json, using default:', e);
-        mediaItems.text = ['I trust chatgpt with every fiber of my being.'];
+        console.error('Could not load quotes.json:', e);
+        mediaItems.text = [{ kind: 'text', src: 'I trust chatgpt with every fiber of my being.' }];
       }
 
-      // Load images and gifs dynamically
-      mediaItems.image = await loadFolder('image');
-      mediaItems.gif = await loadFolder('gif');
-      // Try local videos, otherwise fallback
-      const vids = await loadFolder('video');
-      mediaItems.video = vids.length ? vids : [
-        'https://www.w3schools.com/html/mov_bbb.mp4',
-        'https://www.w3schools.com/html/movie.mp4'
+      // Load images, gifs, videos
+      mediaItems.image = (await loadFolder('image')).map(src => ({ kind: 'image', src }));
+      mediaItems.gif = (await loadFolder('gif')).map(src => ({ kind: 'gif', src }));
+      mediaItems.video = (await loadFolder('video')).map(src => ({ kind: 'video', src }));
+
+      // Combine all
+      mediaItems.all = [
+        ...mediaItems.text,
+        ...mediaItems.image,
+        ...mediaItems.gif,
+        ...mediaItems.video
       ];
 
+      // Initial render
       renderSlides();
     })();
   </script>
