@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title></title>
   <style>
+    /* Existing styles */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -86,9 +87,23 @@
       margin: 0;
       line-height: 1.4;
     }
+
+    /* Overlay styles */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      z-index: 9999;
+    }
   </style>
 </head>
 <body>
+  <!-- Unlock overlay -->
+  <div id="overlay"></div>
+
   <header>
     <nav>
       <button class="btn" data-type="all">All</button>
@@ -100,6 +115,32 @@
     <button id="autoplayBtn" class="btn">Start Autoplay</button>
   </header>
   <div class="slideshow-container"></div>
+
+  <script>
+    // Unlock logic
+    (function() {
+      const overlay = document.getElementById('overlay');
+      let tapCount = 0;
+      // If already unlocked in this session, hide overlay immediately
+      if (sessionStorage.getItem('unlocked') === 'true') {
+        overlay.style.display = 'none';
+        return;
+      }
+      overlay.addEventListener('click', () => {
+        tapCount++;
+        if (tapCount === 7) {
+          // mark unlocked
+          sessionStorage.setItem('unlocked', 'true');
+          // wait 2 seconds then fade out
+          setTimeout(() => {
+            overlay.style.transition = 'opacity 0.5s';
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.style.display = 'none', 500);
+          }, 2000);
+        }
+      });
+    })();
+  </script>
 
   <script>
     (async function() {
