@@ -43,19 +43,19 @@
       margin: 2rem 0;
       overflow: visible; /* show arrows outside */
     }
-    /* Each slide centered within 90% width and full height */
+    /* Each slide starts hidden, will reveal only the active one */
     .slide {
       display: none;
       width: 90%;
       height: 100%;
       margin: 0 auto;
+      text-align: center;
+    }
+    /* Active slide is flex-centered */
+    .slide.active {
       display: flex;
       justify-content: center;
       align-items: center;
-      text-align: center;
-    }
-    .slide.active {
-      display: flex;
     }
     /* Arrow controls span full container, but items at edges */
     .controls {
