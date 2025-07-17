@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title></title>
   <style>
-    /* Existing styles */
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'San Francisco', 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
@@ -87,7 +86,6 @@
       margin: 0;
       line-height: 1.4;
     }
-
     /* Overlay styles */
     #overlay {
       position: fixed;
@@ -117,26 +115,25 @@
   <div class="slideshow-container"></div>
 
   <script>
-    // Unlock logic
+    // Unlock logic: tap counter resets on refresh; exceed taps blocks unlock until reload
     (function() {
       const overlay = document.getElementById('overlay');
       let tapCount = 0;
-      // If already unlocked in this session, hide overlay immediately
-      if (sessionStorage.getItem('unlocked') === 'true') {
-        overlay.style.display = 'none';
-        return;
-      }
+      let unlockTimeout;
       overlay.addEventListener('click', () => {
         tapCount++;
         if (tapCount === 7) {
-          // mark unlocked
-          sessionStorage.setItem('unlocked', 'true');
-          // wait 2 seconds then fade out
-          setTimeout(() => {
-            overlay.style.transition = 'opacity 0.5s';
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.style.display = 'none', 500);
+          unlockTimeout = setTimeout(() => {
+            // only unlock if no extra taps
+            if (tapCount === 7) {
+              overlay.style.transition = 'opacity 0.5s';
+              overlay.style.opacity = '0';
+              setTimeout(() => overlay.style.display = 'none', 500);
+            }
           }, 2000);
+        } else if (tapCount > 7) {
+          // cancel any pending unlock and require refresh
+          if (unlockTimeout) clearTimeout(unlockTimeout);
         }
       });
     })();
@@ -203,11 +200,7 @@
         items.forEach((entry, idx) => {
           const slide = document.createElement('div');
           slide.className = 'slide' + (idx === currentIndex ? ' active' : '');
-
-          let src;
-          if (entry.kind) src = entry.src;
-          else src = entry;
-
+          let src = entry.kind ? entry.src : entry;
           if (entry.kind === 'text' || currentType === 'text') {
             const bq = document.createElement('blockquote');
             bq.textContent = src;
@@ -224,20 +217,14 @@
             img.className = 'media';
             slide.appendChild(img);
           }
-
           container.appendChild(slide);
         });
-
         const ctrl = document.createElement('div');
         ctrl.className = 'controls';
         const prev = document.createElement('button');
-        prev.innerHTML = '&#10094;';
-        prev.className = 'control-btn';
-        prev.onclick = () => changeSlide(-1);
+        prev.innerHTML = '&#10094;'; prev.className = 'control-btn'; prev.onclick = () => changeSlide(-1);
         const next = document.createElement('button');
-        next.innerHTML = '&#10095;';
-        next.className = 'control-btn';
-        next.onclick = () => changeSlide(1);
+        next.innerHTML = '&#10095;'; next.className = 'control-btn'; next.onclick = () => changeSlide(1);
         ctrl.append(prev, next);
         container.appendChild(ctrl);
       }
@@ -257,17 +244,10 @@
         console.error('Could not load quotes.json:', e);
         mediaItems.text = [{ kind: 'text', src: 'I trust chatgpt with every fiber of my being.' }];
       }
-
       mediaItems.image = (await loadFolder('image')).map(src => ({ kind: 'image', src }));
-      mediaItems.gif = (await loadFolder('gif')).map(src => ({ kind: 'gif', src }));
+      mediaItems.gif   = (await loadFolder('gif')).map(src => ({ kind: 'gif',   src }));
       mediaItems.video = (await loadFolder('video')).map(src => ({ kind: 'video', src }));
-      mediaItems.all = [
-        ...mediaItems.text,
-        ...mediaItems.image,
-        ...mediaItems.gif,
-        ...mediaItems.video
-      ];
-
+      mediaItems.all   = [...mediaItems.text, ...mediaItems.image, ...mediaItems.gif, ...mediaItems.video];
       renderSlides();
     })();
   </script>
